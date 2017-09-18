@@ -1,17 +1,15 @@
 package dialog;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
+
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.ui.ScrollPaneFactory;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -26,9 +24,11 @@ public class PetraDisplay {
 
     private final Map<PetraCategory, JTable> tables = new EnumMap<PetraCategory, JTable>(PetraCategory.class);
     private final JTabbedPane tabbedPane = new JTabbedPane();
+    private final Project project;
 
     public PetraDisplay(@NotNull Project project) {
         JTable resultTable = getTable();
+        this.project = project;
         tables.put(PetraCategory.Result,resultTable);
         JTable logTable = new JTable();
         tables.put(PetraCategory.Log,logTable);
@@ -64,7 +64,7 @@ public class PetraDisplay {
         averagedConsumptionsDataList.add(new ConsumptionData("dialog.ClosePetraViewAction.dialog.dialogdialog.ClosePetraViewAction.dialog.dialog",133,155 ));
         averagedConsumptionsDataList.add(new ConsumptionData("dialog",133,155 ));
         averagedConsumptionsDataList.add(new ConsumptionData("dialog.ClosePetraViewAction.dialog.",133,155 ));
-        averagedConsumptionsDataList.add(new ConsumptionData("com",133,155 ));
+        averagedConsumptionsDataList.add(new ConsumptionData("dialog/ProvaPetra",133,155 ));
         averagedConsumptionsDataList.add(new ConsumptionData("com",133,155 ));
         averagedConsumptionsDataList.add(new ConsumptionData("com",133,155 ));
 
@@ -83,7 +83,17 @@ public class PetraDisplay {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(table.getSelectedColumn()==0)
-                    Notifications.Bus.notify(new Notification("github", "Success", "Successfully created project ''" + table.getValueAt(table.getSelectedRow(),table.getSelectedColumn()) + "'' on github", NotificationType.INFORMATION));
+                {
+                    String name_class = table.getValueAt(table.getSelectedRow(),table.getSelectedColumn()).toString();
+                    PsiManager psiManager = PsiManager.getInstance(project);
+                    String class_to_open = psiManager.findDirectory(project.getBaseDir()).getVirtualFile().getPath()+"/src/"+name_class+".java";
+                    VirtualFile file_class = LocalFileSystem.getInstance().findFileByPath(class_to_open);
+                    FileEditorManager.getInstance(project).openFile(file_class,true,true);
+                    if(FileEditorManager.getInstance(project).isFileOpen(file_class))
+                        System.out.println("ok");
+                    //FileEditorManager.getInstance(project).setSelectedEditor(file_class,"public void prova()");
+                }
+
             }
 
             @Override
