@@ -23,10 +23,12 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.PrintStream;
 
 public class UIPetra extends DialogWrapper
 {
 
+    private JTextArea statusArea;
     private JPanel contentPane;
     private JTextField apkLocationField;
     private JLabel apkLocationLabel;
@@ -87,6 +89,9 @@ public class UIPetra extends DialogWrapper
         setOKButtonIcon(new ImageIcon(getClass().getResource("/play-button.png")));
         setOKButtonText("Start Energy Estimation");
         setOKActionEnabled(false);
+        statusArea = new JTextArea();
+        PrintStream out = new PrintStream(new TextAreaOutputStream(statusArea));
+        System.setOut(out);
 
     }
 
@@ -257,7 +262,7 @@ public class UIPetra extends DialogWrapper
                 ApplicationManager.getApplication().invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        final PetraToolWindow toolWindow = PetraToolWindow.getInstance(project);
+                        final PetraToolWindow toolWindow = PetraToolWindow.getInstance(project,statusArea);
                         toolWindow.show();
                     }
                 });

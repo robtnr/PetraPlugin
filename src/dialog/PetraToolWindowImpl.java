@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public final class PetraToolWindowImpl extends PetraToolWindow {
 
@@ -19,14 +20,14 @@ public final class PetraToolWindowImpl extends PetraToolWindow {
     private final PetraDisplay display;
     private ToolWindow myToolWindow = null;
 
-    public PetraToolWindowImpl(@NotNull Project project) {
+    public PetraToolWindowImpl(@NotNull Project project) throws IOException {
         this.project = project;
         final DefaultActionGroup toolbarGroup = new DefaultActionGroup();
         toolbarGroup.add(new ClosePetraViewAction(this));
         final ActionManager actionManager = ActionManager.getInstance();
         final ActionToolbar toolbar  = actionManager.createActionToolbar(TOOL_WINDOW_ID, toolbarGroup,false);
         panel = new JPanel(new BorderLayout());
-        display = new PetraDisplay(project);
+        display = new PetraDisplay(project,TOOL_STATUS_AREA);
         panel.add(toolbar.getComponent(),BorderLayout.WEST);
         panel.add(display.getTabbedPane(),BorderLayout.CENTER);
         register();
