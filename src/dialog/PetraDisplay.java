@@ -304,4 +304,7 @@ public class PetraDisplay {
         tab2.removeAll();
         tab2.add(chartPanel, new GridConstraints());
     }
+    public List<ConsumptionData> getAveragedConsumptionsDataList() {
+        return averagedConsumptionsDataList;
+    }
 }

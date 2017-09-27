@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.util.List;
 
 public final class PetraToolWindowImpl extends PetraToolWindow {
 
@@ -23,11 +24,14 @@ public final class PetraToolWindowImpl extends PetraToolWindow {
     public PetraToolWindowImpl(@NotNull Project project) throws IOException {
         this.project = project;
         final DefaultActionGroup toolbarGroup = new DefaultActionGroup();
+        toolbarGroup.add(new ExportCSVAction(new ImageIcon(getClass().getResource("/csv.png"))));
+        display = new PetraDisplay(project,TOOL_STATUS_AREA,outputLocationPath1);
+        List<ConsumptionData> averagedConsumptionsDataList = display.getAveragedConsumptionsDataList();
+        toolbarGroup.add(new ExportXMLAction(new ImageIcon(getClass().getResource("/xml.png")), averagedConsumptionsDataList));
         toolbarGroup.add(new ClosePetraViewAction(this));
         final ActionManager actionManager = ActionManager.getInstance();
         final ActionToolbar toolbar  = actionManager.createActionToolbar(TOOL_WINDOW_ID, toolbarGroup,false);
         panel = new JPanel(new BorderLayout());
-        display = new PetraDisplay(project,TOOL_STATUS_AREA,outputLocationPath1);
         panel.add(toolbar.getComponent(),BorderLayout.WEST);
         panel.add(display.getTabbedPane(),BorderLayout.CENTER);
         register();
