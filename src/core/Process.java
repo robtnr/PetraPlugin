@@ -52,6 +52,7 @@ public class Process {
         String platformToolsFolder = sdkFolderPath + File.separator + "platform-tools";
         String toolsFolder = sdkFolderPath + File.separator + "tools";
 
+
         Random random = new Random();
         int seed = random.nextInt();
 
@@ -59,6 +60,8 @@ public class Process {
             System.out.println("Run " + run + ": seed: " + seed);
         }
         String runDataFolderName = outputLocation + "/run_" + run + File.separator;
+
+
         File runDataFolder = new File(runDataFolderName);
 
         runDataFolder.mkdirs();
@@ -71,9 +74,9 @@ public class Process {
         this.startApp(appName);
 
         Date time1 = new Date();
-        SysTraceRunner sysTraceRunner = this.startProfiling(appName, run, timeCapturing, systraceFilename, platformToolsFolder);
-        Thread systraceThread = new Thread(sysTraceRunner);
-        systraceThread.start();
+        //SysTraceRunner sysTraceRunner = this.startProfiling(appName, run, timeCapturing, systraceFilename, platformToolsFolder);
+        //Thread systraceThread = new Thread(sysTraceRunner);
+        //systraceThread.start();
 
         this.executeActions(appName, run, scriptLocationPath, toolsFolder, interactions, timeBetweenInteractions, seed);
 
@@ -84,7 +87,7 @@ public class Process {
 
         this.extractInfo(appName, run, batteryStatsFilename, runDataFolderName, platformToolsFolder, traceviewFilename);
 
-        systraceThread.join();
+        //systraceThread.join();
 
         System.out.println("Run " + run + ": aggregating results.");
 
@@ -116,13 +119,22 @@ public class Process {
 
         this.executeCommand("adb pull /system/framework/framework-res.apk", null);
 
-        this.executeCommand("jar xf " + jarDirectory + "/PETrA.jar apktool_2.2.2.jar", null);
+        //this.executeCommand("jar xf " + jarDirectory + "/PETrA.jar apktool_2.2.2.jar", null);
+        System.out.println("1");
+        this.executeCommand("jar xf " +"C:\\Users\\Utente\\.IdeaIC2017.2\\system\\plugins-sandbox\\plugins\\TesiPetra\\classes\\apktool_2.2.2.jar", null);
+        System.out.println("2");
         this.executeCommand("java -jar apktool_2.2.2.jar if framework-res.apk", null);
+        System.out.println("3");
         this.executeCommand("java -jar apktool_2.2.2.jar d framework-res.apk", null);
-        this.executeCommand("mv " + jarDirectory + "/framework-res/res/xml/power_profile.xml " + outputLocation, null);
-        this.executeCommand("rm -rf " + jarDirectory + "/apktool_2.2.2.jar", null);
-        this.executeCommand("rm -rf " + jarDirectory + "/framework-res.apk", null);
-        this.executeCommand("rm -rf " + jarDirectory + "/framework-res", null);
+        System.out.println("4");
+        //this.executeCommand("mv " + jarDirectory + "/framework-res/res/xml/power_profile.xml " + outputLocation, null);
+        this.executeCommand("mv " + "C:\\Users\\Utente\\.IdeaIC2017.2\\system\\plugins-sandbox\\plugins\\TesiPetra\\classes" + "/framework-res/res/xml/power_profile.xml " + outputLocation, null);
+        //this.executeCommand("rm -rf " + jarDirectory + "/apktool_2.2.2.jar", null);
+        this.executeCommand("rm -rf " + "C:\\Users\\Utente\\.IdeaIC2017.2\\system\\plugins-sandbox\\plugins\\TesiPetra\\classes\\apktool_2.2.2.jar", null);
+        //this.executeCommand("rm -rf " + jarDirectory + "/framework-res.apk", null);
+        this.executeCommand("rm -rf " + "C:\\Users\\Utente\\.IdeaIC2017.2\\system\\plugins-sandbox\\plugins\\TesiPetra\\classes" + "/framework-res.apk", null);
+        //this.executeCommand("rm -rf " + jarDirectory + "/framework-res", null);
+        this.executeCommand("rm -rf " + "C:\\Users\\Utente\\.IdeaIC2017.2\\system\\plugins-sandbox\\plugins\\TesiPetra\\classes" + "/framework-res", null);
     }
 
     private void resetApp(String appName, int run) throws NoDeviceFoundException {
@@ -144,7 +156,7 @@ public class Process {
                                 int timeBetweenInteractions, int seed) throws NoDeviceFoundException {
         if (scriptLocationPath.isEmpty()) {
             System.out.println("Run " + run + ": executing random actions.");
-            this.executeCommand("adb shell monkey -p " + appName + " -s " + seed + " --throttle " + timeBetweenInteractions + " --ignore-crashes --ignore-timeouts --ignore-security-exceptions " + interactions, null);
+            //this.executeCommand("adb shell monkey -p " + appName + " -s " + seed + " --throttle " + timeBetweenInteractions + " --ignore-crashes --ignore-timeouts --ignore-security-exceptions " + interactions, null);
         } else {
             System.out.println("Run " + run + ": running monkeyrunner script.");
             String jarDirectory = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath()).getParentFile().getPath();
@@ -156,14 +168,14 @@ public class Process {
 
     private void extractInfo(String appName, int run, String batteryStatsFilename, String runDataFolderName, String platformToolsFolder, String traceviewFilename) throws NoDeviceFoundException {
         System.out.println("Run " + run + ": stop profiling.");
-        this.executeCommand("adb shell am profile stop " + appName, null);
+        //this.executeCommand("adb shell am profile stop " + appName, null);
 
         System.out.println("Run " + run + ": saving battery stats.");
-        this.executeCommand("adb shell dumpsys batterystats", new File(batteryStatsFilename));
+        //this.executeCommand("adb shell dumpsys batterystats", new File(batteryStatsFilename));
 
         System.out.println("Run " + run + ": saving traceviews.");
-        this.executeCommand("adb pull ./data/local/tmp/log.trace " + runDataFolderName, null);
-        this.executeCommand(platformToolsFolder + "/dmtracedump -o " + runDataFolderName + "log.trace", new File(traceviewFilename));
+        //this.executeCommand("adb pull ./data/local/tmp/log.trace " + runDataFolderName, null);
+        //this.executeCommand(platformToolsFolder + "/dmtracedump -o " + runDataFolderName + "log.trace", new File(traceviewFilename));
 
     }
 
@@ -193,6 +205,7 @@ public class Process {
     }
 
     private List<EnergyInfo> mergeEnergyInfo(List<EnergyInfo> energyInfoArray, SysTrace cpuInfo, int numOfCore) {
+
 
         List<Integer> cpuFrequencies = new ArrayList<>();
 
@@ -251,7 +264,7 @@ public class Process {
                         previouslyIdle[i] = true;
                     }
                 }
-
+                System.out.println("ciao3");
                 for (String deviceString : energyInfo.getDevices()) {
                     if (deviceString.contains("wifi")) {
                         ampere += powerProfile.getDevices().get("wifi.on") / 1000;
@@ -353,7 +366,7 @@ public class Process {
 
     private void checkADBExists() throws ADBNotFoundException {
         String sdkFolderPath = System.getenv("ANDROID_HOME");
-        String adbPath = sdkFolderPath + "/platform-tools/adb";
+        String adbPath = sdkFolderPath + "/platform-tools/adb.exe";  //adb solo
         File adbFile = new File(adbPath);
         if (!adbFile.exists()) {
             throw new ADBNotFoundException();

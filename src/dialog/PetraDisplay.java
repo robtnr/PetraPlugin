@@ -48,8 +48,10 @@ public class PetraDisplay {
     private JPanel tab2;
 
     private String csvFile;
+    private String outputLocationPath;
 
-    public PetraDisplay(@NotNull Project project, JTextArea statusArea) throws IOException {
+    public PetraDisplay(@NotNull Project project, JTextArea statusArea, String outputLocationPath) throws IOException {
+        this.outputLocationPath = outputLocationPath;
         getTable();
         this.project = project;
         tables.put(PetraCategory.Result,consumptionTable);
@@ -65,7 +67,7 @@ public class PetraDisplay {
     }
 
     public void getTable() throws IOException {
-        this.csvFile = getClass().getResource("/result.csv").toString();//this.mergeRunResults(inputLocationPath);
+        this.csvFile = "C:/Users/Utente/.IdeaIC2017.2/system/plugins-sandbox/plugins/TesiPetra/classes/result.csv";//this.mergeRunResults(outputLocationPath);
         this.updateTable("");
         this.updateBoxplot("");
         /*
@@ -191,7 +193,7 @@ public class PetraDisplay {
     private void filterData(String nameFilter) throws IOException {
         filteredConsumptionsDataList = new ArrayList<>();
 
-        Reader in = new FileReader("C:/Users/Utente/.IdeaIC2017.2/system/plugins-sandbox/plugins/TesiPetra/classes/result.csv");
+        Reader in = new FileReader(csvFile);
         Iterable<CSVRecord> records = CSVFormat.RFC4180.withFirstRecordAsHeader().parse(in);
 
         Pattern pattern = Pattern.compile("^\\S*");

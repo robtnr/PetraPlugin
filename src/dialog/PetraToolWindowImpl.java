@@ -27,7 +27,7 @@ public final class PetraToolWindowImpl extends PetraToolWindow {
         final ActionManager actionManager = ActionManager.getInstance();
         final ActionToolbar toolbar  = actionManager.createActionToolbar(TOOL_WINDOW_ID, toolbarGroup,false);
         panel = new JPanel(new BorderLayout());
-        display = new PetraDisplay(project,TOOL_STATUS_AREA);
+        display = new PetraDisplay(project,TOOL_STATUS_AREA,outputLocationPath1);
         panel.add(toolbar.getComponent(),BorderLayout.WEST);
         panel.add(display.getTabbedPane(),BorderLayout.CENTER);
         register();

@@ -14,6 +14,12 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import core.Process;
+import core.ProcessOutput;
+import core.exceptions.ADBNotFoundException;
+import core.exceptions.AppNameCannotBeExtractedException;
+import core.exceptions.NoDeviceFoundException;
+import core.exceptions.NumberOfTrialsExceededException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,8 +28,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.PrintStream;
+import java.beans.PropertyChangeEvent;
+import java.io.*;
 
 public class UIPetra extends DialogWrapper
 {
@@ -227,45 +233,57 @@ public class UIPetra extends DialogWrapper
     @Override
     protected void doOKAction() {
         super.doOKAction();
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Title"){
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "PETrA processing..."){
             public void run(@NotNull ProgressIndicator progressIndicator) {
 
                 // start your process
 
-                // Set the progress bar percentage and text
-                progressIndicator.setFraction(0.10);
-                progressIndicator.setText("90% to finish");
+                String apkLocationPath = apkLocationField.getText();
+                int runs = runsSlider.getValue();
+                int interactions = interactionsSlider.getValue();
+                int timeBetweenInteractions = timeBetweenInteractionsSlider.getValue();
+                int scriptTime = (int) scriptTimeSpinner.getValue();
+                String scriptLocationPath = scriptLocationField.getText();
+                String powerProfilePath = powerProfileFileField.getText();
 
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                boolean valid = true;
+
+                if (apkLocationPath.isEmpty()) {
+                    System.out.println("Apk location missing.");
+                    valid = false;
                 }
 
-                // 50% done
-                progressIndicator.setFraction(0.50);
-                progressIndicator.setText("50% to finish");
-
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                // Finished
-                Notifications.Bus.notify(new Notification("github", "Success", "Successfully created project ''" + "PEtrA" + "'' on github", NotificationType.INFORMATION));
-                Notifications.Bus.notify(new Notification("github", "Error", "Error created project ''" + "PEtrA" + "'' on github", NotificationType.ERROR));
-
-                progressIndicator.setFraction(1.0);
-                progressIndicator.setText("finished");
-
-                //Notifica nella status bar
-                ApplicationManager.getApplication().invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        final PetraToolWindow toolWindow = PetraToolWindow.getInstance(project,statusArea);
-                        toolWindow.show();
+                if (monkeyrunnerRadioButton.isSelected()) {
+                    if (scriptLocationPath.isEmpty()) {
+                        System.out.println("You must select a script to be executed.");
+                        valid = false;
+                    } else {
+                        if (scriptTime <= 0) {
+                            System.out.println("You must select the estimated time needed for executing the script.");
+                            valid = false;
+                        }
                     }
-                });
+                }
+
+                if (!valid) {
+                    return;
+                }
+
+
+                try {
+                    start(apkLocationPath, interactions, timeBetweenInteractions,
+                            scriptLocationPath, scriptTime, runs, powerProfilePath, progressIndicator);
+                } catch (AppNameCannotBeExtractedException e) {
+                    e.printStackTrace();
+                } catch (NoDeviceFoundException e) {
+                    e.printStackTrace();
+                } catch (ADBNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+
+                // Finished
+
 
             }});
 
@@ -327,5 +345,82 @@ public class UIPetra extends DialogWrapper
             String filename = f.getAbsolutePath();
             scriptLocationField.setText(filename);
         }
+    }
+
+    public void start(String apkLocationPath, int interactions, int timeBetweenInteractions, String scriptLocationPath,
+                    int scriptTime, int runs, String powerProfilePath,ProgressIndicator progressIndicator) throws AppNameCannotBeExtractedException, NoDeviceFoundException, ADBNotFoundException {
+            try {
+                Process process = new Process();
+                progressIndicator.setFraction(0);
+                int progress;
+                int trials = 0;
+                BufferedWriter seedsWriter = null;
+
+                appName = process.extractAppName(apkLocationPath);
+
+                String outputLocationPath = new File(apkLocationPath).getParent() + File.separator + "test_data" + File.separator + appName;
+
+                File appDataFolder = new File(outputLocationPath);
+
+                appDataFolder.mkdirs();
+
+                if (scriptLocationPath.isEmpty()) {
+                    File seedsFile = new File(outputLocationPath + File.separator + "seeds");
+                    seedsWriter = new BufferedWriter(new FileWriter(seedsFile, true));
+                }
+                progressIndicator.setText("Installing app");
+                process.installApp(apkLocationPath);
+
+                progressIndicator.setText("Check Power Profile");
+                if (powerProfilePath.isEmpty()) {
+                    process.extractPowerProfile(outputLocationPath);
+                    powerProfilePath = outputLocationPath + "/power_profile.xml";
+                }
+
+                int timeCapturing = (interactions * timeBetweenInteractions) / 1000;
+
+                progressIndicator.setText("Check Script Location");
+                if (!scriptLocationPath.isEmpty()) {
+                    timeCapturing = scriptTime;
+                }
+
+                for (int run = 1; run <= runs; run++) {
+                    if (trials == 10) {
+                        throw new NumberOfTrialsExceededException();
+                    }
+                    try {
+                        progressIndicator.setText("Run Process");
+                        ProcessOutput output = process.playRun(run, appName, interactions, timeBetweenInteractions, timeCapturing,
+                                scriptLocationPath, powerProfilePath, outputLocationPath, appName);
+                        if (seedsWriter != null) {
+                            seedsWriter.append(String.valueOf(output.getSeed())).append("\n");
+                        }
+                        timeCapturing = output.getTimeCapturing();
+                        progress = (100 * run / runs);
+                        progressIndicator.setFraction(progress);
+                    } catch (InterruptedException | IOException ex) {
+                        run--;
+                        trials++;
+                    }
+                }
+                progressIndicator.setText("Uninstalling app");
+                process.uninstallApp(appName);
+                Notifications.Bus.notify(new Notification("github", "Success", "Successfully created project ''" + "PEtrA" + "'' on github", NotificationType.INFORMATION));
+                Notifications.Bus.notify(new Notification("github", "Error", "Error created project ''" + "PEtrA" + "'' on github", NotificationType.ERROR));
+
+
+                //Notifica nella status bar
+                ApplicationManager.getApplication().invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        String outputLocationPath = new File(apkLocationField.getText()).getParent() + File.separator + "test_data" + File.separator + appName;
+                        final PetraToolWindow toolWindow = PetraToolWindow.getInstance(project,statusArea,outputLocationPath);
+                        toolWindow.show();
+                    }
+                });
+            } catch (IOException | NumberOfTrialsExceededException ex) {
+
+            }
     }
 }
