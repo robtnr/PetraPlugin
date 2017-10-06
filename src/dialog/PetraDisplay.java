@@ -1,6 +1,9 @@
 package dialog;
 
 
+import com.intellij.ide.plugins.IdeaPluginDescriptor;
+import com.intellij.ide.plugins.PluginManager;
+import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -8,6 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
@@ -28,12 +32,16 @@ import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,19 +54,48 @@ public class PetraDisplay {
     private List<ConsumptionData> averagedConsumptionsDataList;
     private JTable consumptionTable;
     private JPanel tab2;
+    private JPanel panel_first;
 
     private String csvFile;
     private String outputLocationPath;
+    private JTextField search = new JTextField();
+    private JButton button_search;
+    private JTextArea statusArea;
+    private JButton clean;
 
     public PetraDisplay(@NotNull Project project, JTextArea statusArea, String outputLocationPath) throws IOException {
+        this.statusArea = statusArea;
         this.outputLocationPath = outputLocationPath;
-        getTable();
-        this.project = project;
-        tables.put(PetraCategory.Result,consumptionTable);
 
-        tabbedPane.add("Result PETrA", ScrollPaneFactory.createScrollPane(consumptionTable));
+        getTable();
+
+        panel_first = new JPanel(new GridLayoutManager(3,4));
+        button_search = new JButton("Filter Results", new ImageIcon(getClass().getResource("/filter.png")));
+        button_search.setToolTipText("Filter Results.");
+        button_search.addActionListener(evt -> filterResultsActionPerformed());
+        clean = new JButton("Clean Results", new ImageIcon(getClass().getResource("/clean.png")));
+        clean.setToolTipText("Clean.");
+        clean.addActionListener(evt -> cleanResultsActionPerformed());
+        panel_first.add(search, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel_first.add(button_search, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel_first.add(clean, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+        search.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    filterResultsActionPerformed();
+                }
+            }
+        });
+        this.project = project;
+        //tables.put(PetraCategory.Result,consumptionTable);
+
+        panel_first.add(consumptionTable.getTableHeader(), new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel_first.add(consumptionTable, new GridConstraints(2, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+        tabbedPane.add("Result PETrA", ScrollPaneFactory.createScrollPane(panel_first));
         tabbedPane.add("BoxPlot PETrA", ScrollPaneFactory.createScrollPane(tab2));
-        tabbedPane.add("Log PETrA", ScrollPaneFactory.createScrollPane(statusArea));
+        tabbedPane.add("Log PETrA", ScrollPaneFactory.createScrollPane(this.statusArea));
     }
 
     public JTabbedPane getTabbedPane()
@@ -67,7 +104,9 @@ public class PetraDisplay {
     }
 
     public void getTable() throws IOException {
-        this.csvFile = "C:/Users/Utente/.IdeaIC2017.2/system/plugins-sandbox/plugins/TesiPetra/classes/result.csv";//this.mergeRunResults(outputLocationPath);
+        final PluginId pluginId = PluginId.getId("IdPetra");
+        final IdeaPluginDescriptor pluginDescriptor = PluginManager.getPlugin(pluginId);
+        this.csvFile = pluginDescriptor.getPath().getAbsolutePath() + "/risorse/result.csv";//this.mergeRunResults(outputLocationPath);
         this.updateTable("");
         this.updateBoxplot("");
         /*
@@ -123,7 +162,7 @@ public class PetraDisplay {
     }
 
     private void updateTable(String nameFilter) throws IOException {
-        System.out.println(csvFile);
+
         this.filterData(nameFilter);
         this.calculateAverages();
 
@@ -152,8 +191,7 @@ public class PetraDisplay {
             public void mouseClicked(MouseEvent e) {
                 if(consumptionTable.getSelectedColumn()==0)
                 {
-                    System.out.println("ciao");
-                    String name_class = consumptionTable.getValueAt(consumptionTable.getSelectedRow(),consumptionTable.getSelectedColumn()).toString();
+                   /* String name_class = consumptionTable.getValueAt(consumptionTable.getSelectedRow(),consumptionTable.getSelectedColumn()).toString();
                     PsiManager psiManager = PsiManager.getInstance(project);
                     String class_to_open = psiManager.findDirectory(project.getBaseDir()).getVirtualFile().getPath()+"/src/"+name_class+".java";
                     VirtualFile file_class = LocalFileSystem.getInstance().findFileByPath(class_to_open);
@@ -161,6 +199,7 @@ public class PetraDisplay {
                     if(FileEditorManager.getInstance(project).isFileOpen(file_class))
                         System.out.println("ok");
                     //FileEditorManager.getInstance(project).setSelectedEditor(file_class,"public void prova()");
+                    */
                 }
 
             }
@@ -304,6 +343,84 @@ public class PetraDisplay {
         tab2.removeAll();
         tab2.add(chartPanel, new GridConstraints());
     }
+
+    private void filterResultsActionPerformed() {
+        try {
+            updateTable(search.getText());
+            updateBoxplot(search.getText());
+        } catch (IOException ex) {
+
+        }
+
+        panel_first = new JPanel(new GridLayoutManager(3,4));
+        button_search = new JButton("Filter Results", new ImageIcon(getClass().getResource("/filter.png")));
+        button_search.setToolTipText("Filter Results.");
+        button_search.addActionListener(evt -> filterResultsActionPerformed());
+        clean = new JButton("Clean Results", new ImageIcon(getClass().getResource("/clean.png")));
+        clean.setToolTipText("Clean.");
+        clean.addActionListener(evt -> cleanResultsActionPerformed());
+        panel_first.add(search, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel_first.add(button_search, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel_first.add(clean, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+
+        search.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    filterResultsActionPerformed();
+                }
+            }
+        });
+
+        panel_first.add(consumptionTable.getTableHeader(), new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel_first.add(consumptionTable, new GridConstraints(2, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+
+        tabbedPane.removeAll();
+        tabbedPane.add("Result PETrA", ScrollPaneFactory.createScrollPane(panel_first));
+        tabbedPane.add("BoxPlot PETrA", ScrollPaneFactory.createScrollPane(tab2));
+        tabbedPane.add("Log PETrA", ScrollPaneFactory.createScrollPane(this.statusArea));
+    }
+
+    private void cleanResultsActionPerformed() {
+        try {
+            updateTable("");
+            updateBoxplot("");
+            button_search.setText("");
+        } catch (IOException ex) {
+
+        }
+
+        panel_first = new JPanel(new GridLayoutManager(3,4));
+        button_search = new JButton("Filter Results", new ImageIcon(getClass().getResource("/filter.png")));
+        button_search.setToolTipText("Filter Results.");
+        button_search.addActionListener(evt -> filterResultsActionPerformed());
+        clean = new JButton("Clean Results", new ImageIcon(getClass().getResource("/clean.png")));
+        clean.setToolTipText("Clean.");
+        clean.addActionListener(evt -> cleanResultsActionPerformed());
+        panel_first.add(search, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel_first.add(button_search, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel_first.add(clean, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+
+        search.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    filterResultsActionPerformed();
+                }
+            }
+        });
+
+        panel_first.add(consumptionTable.getTableHeader(), new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel_first.add(consumptionTable, new GridConstraints(2, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+
+        tabbedPane.removeAll();
+        tabbedPane.add("Result PETrA", ScrollPaneFactory.createScrollPane(panel_first));
+        tabbedPane.add("BoxPlot PETrA", ScrollPaneFactory.createScrollPane(tab2));
+        tabbedPane.add("Log PETrA", ScrollPaneFactory.createScrollPane(this.statusArea));
+    }
+
     public List<ConsumptionData> getAveragedConsumptionsDataList() {
         return averagedConsumptionsDataList;
     }

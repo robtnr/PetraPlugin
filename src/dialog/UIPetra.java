@@ -1,9 +1,12 @@
 package dialog;
 
+import com.intellij.ide.plugins.IdeaPluginDescriptor;
+import com.intellij.ide.plugins.PluginManager;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -250,16 +253,19 @@ public class UIPetra extends DialogWrapper
 
                 if (apkLocationPath.isEmpty()) {
                     System.out.println("Apk location missing.");
+                    Notifications.Bus.notify(new Notification("IDApkMissing", "Error", "Apk location missing.", NotificationType.ERROR));
                     valid = false;
                 }
 
                 if (monkeyrunnerRadioButton.isSelected()) {
                     if (scriptLocationPath.isEmpty()) {
                         System.out.println("You must select a script to be executed.");
+                        Notifications.Bus.notify(new Notification("IDScriptLocationMissing", "Error", "You must select a script to be executed.", NotificationType.ERROR));
                         valid = false;
                     } else {
                         if (scriptTime <= 0) {
                             System.out.println("You must select the estimated time needed for executing the script.");
+                            Notifications.Bus.notify(new Notification("IDScriptTimeMissing", "Error", "You must select the estimated time needed for executing the script.", NotificationType.ERROR));
                             valid = false;
                         }
                     }
@@ -405,8 +411,8 @@ public class UIPetra extends DialogWrapper
                 }
                 progressIndicator.setText("Uninstalling app");
                 process.uninstallApp(appName);
-                Notifications.Bus.notify(new Notification("github", "Success", "Successfully created project ''" + "PEtrA" + "'' on github", NotificationType.INFORMATION));
-                Notifications.Bus.notify(new Notification("github", "Error", "Error created project ''" + "PEtrA" + "'' on github", NotificationType.ERROR));
+                Notifications.Bus.notify(new Notification("IDNotifyEnd", "Success", "Petra Excecution Ended.", NotificationType.INFORMATION));
+
 
 
                 //Notifica nella status bar
