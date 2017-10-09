@@ -60,7 +60,8 @@ public class ExportXMLAction extends AnAction {
             @NonNls final PrintWriter writer;
             try {
                 writer = new PrintWriter(new FileOutputStream(fileName));
-                writer.println("<PETRA date='" + data + "'>");
+                writer.println("" +"<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+                writer.println("" +"<PETRA date='" + data + "'>");
                 for (int i = 0; i < averagedConsumptionsDataList.size(); i++) {
                     writer.println("\t<SIGNATURE name='" + averagedConsumptionsDataList.get(i).getSignature() + "'>");
                     writer.println("\t\t<JOULE>" + averagedConsumptionsDataList.get(i).getJoule() + "</JOULE>");

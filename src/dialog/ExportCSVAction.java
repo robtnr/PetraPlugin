@@ -51,7 +51,7 @@ public class ExportCSVAction extends AnAction {
             }
             final PluginId pluginId = PluginId.getId("IdPetra");
             final IdeaPluginDescriptor pluginDescriptor = PluginManager.getPlugin(pluginId);
-            File source = new File(pluginDescriptor.getPath().getAbsolutePath() + "/risorse/result.csv");
+            File source = new File(pluginDescriptor.getPath().getAbsolutePath() + "/resources/result.csv");
             File dest = new File(fileName);
             try {
                 FileUtils.copyFile(source, dest);

@@ -23,14 +23,20 @@ public class PetraAction extends AnAction {
         final PluginId pluginId = PluginId.getId("IdPetra");
         final IdeaPluginDescriptor pluginDescriptor = PluginManager.getPlugin(pluginId);
         //Creazione cartella "risorse"
-        if(!new File(pluginDescriptor.getPath().getAbsolutePath()+"/risorse").exists())
+        if(!new File(pluginDescriptor.getPath().getAbsolutePath()+"/resources").exists())
         {
-            new File(pluginDescriptor.getPath().getAbsolutePath() + "/risorse").mkdirs();
+            new File(pluginDescriptor.getPath().getAbsolutePath() + "/resources").mkdirs();
             File result = new File(getClass().getClassLoader().getResource("/result.csv").getFile());
-            System.out.println(result.getAbsolutePath());
-            File dest = new File(pluginDescriptor.getPath().getAbsolutePath() + "/risorse/result.csv");
+            File apktool = new File(getClass().getClassLoader().getResource("/apktool_2.2.2.jar").getFile());
+            File monkey_playback = new File(getClass().getClassLoader().getResource("/monkey_playback.py").getFile());
+
+            File dest_result = new File(pluginDescriptor.getPath().getAbsolutePath() + "/resources/result.csv");
+            File apktool_result = new File(pluginDescriptor.getPath().getAbsolutePath() + "/resources/apktool_2.2.2.jar");
+            File monkey_playback_result = new File(pluginDescriptor.getPath().getAbsolutePath() + "/resources/monkey_playback.py");
             try {
-                FileUtils.copyFile(result, dest);
+                FileUtils.copyFile(result, dest_result);
+                FileUtils.copyFile(apktool, apktool_result);
+                FileUtils.copyFile(monkey_playback, monkey_playback_result);
             } catch (IOException e1) {
                 e1.printStackTrace();
             }

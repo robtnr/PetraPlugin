@@ -106,7 +106,7 @@ public class PetraDisplay {
     public void getTable() throws IOException {
         final PluginId pluginId = PluginId.getId("IdPetra");
         final IdeaPluginDescriptor pluginDescriptor = PluginManager.getPlugin(pluginId);
-        this.csvFile = pluginDescriptor.getPath().getAbsolutePath() + "/risorse/result.csv";//this.mergeRunResults(outputLocationPath);
+        this.csvFile = pluginDescriptor.getPath().getAbsolutePath() + "/resources/result.csv";//this.mergeRunResults(outputLocationPath);
         this.updateTable("");
         this.updateBoxplot("");
         /*
