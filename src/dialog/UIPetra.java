@@ -299,6 +299,7 @@ public class UIPetra extends DialogWrapper
 
     private void apkLocationButtonActionPerformed() {
         JFileChooser chooser = new JFileChooser();
+        chooser.setAcceptAllFileFilterUsed(false);
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Apk Files", "apk");
         chooser.setFileFilter(filter);
         int res = chooser.showOpenDialog(null);
@@ -311,6 +312,7 @@ public class UIPetra extends DialogWrapper
 
     private void powerProfileFileButtonActionPerformed() {
         JFileChooser chooser = new JFileChooser();
+        chooser.setAcceptAllFileFilterUsed(false);
         FileNameExtensionFilter filter = new FileNameExtensionFilter("XML Files", "xml");
         chooser.setFileFilter(filter);
         int res = chooser.showOpenDialog(null);
